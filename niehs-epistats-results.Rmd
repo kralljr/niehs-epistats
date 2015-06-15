@@ -1,0 +1,96 @@
+---
+title: "Final results for NIEHS epi-stats workshop"
+author: "Jenna Krall"
+date: "June 15, 2015"
+output: 
+  html_document: 
+    theme: journal
+    toc: true
+    numbered_sections: true
+    toc_depth: 2
+---
+
+
+```{r setup}
+# load knitr package 
+library(knitr)
+
+# set knitr options
+opts_chunk$set(message=FALSE, echo = F,
+    warning = F,fig.height = 5, fig.width = 10, tidy = F)
+
+```
+
+
+```{r libraries}
+# load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(psych)
+library(MASS)
+library(RColorBrewer)
+library(reshape2)
+library(rpart)
+```
+
+
+```{r opt1}
+# Set options for rpart
+fit.control <- rpart.control(xval = 100, cp = 0, minbucket = 5, maxcompete = 4)
+
+# Source functions
+source("niehs-epistats-fn.R")
+
+# Set directory
+opts_knit$set(root.dir = "~/Dropbox/NIEHSmixtures")
+
+
+```
+
+# Simulated dataset 1
+
+```{r read1}
+dat <- read.csv("DataSet1.csv", stringsAsFactors = F)
+covar <- paste0("X", seq(1, 7))
+outcome <- "Y"
+confound <- "Z"
+```
+
+
+```{r sim1}
+sim1 <- niehs_outer(dat, outcome, confound, covar)
+```
+
+
+# Simulated dataset 2
+
+```{r read2}
+dat <- read.csv("DataSet2.csv", stringsAsFactors = F)
+covar <- paste0("x", seq(1, 14))
+outcome <- "y"
+confound <- paste0("z", 1 : 3)
+```
+
+
+```{r sim2}
+sim2 <- niehs_outer(dat, outcome, confound, covar)
+```
+
+
+# Real world dataset
+
+```{r readreal}
+dat <- read.csv("realdata/niehs_mix_real.csv", stringsAsFactors = F)
+cn <- colnames(dat)
+ss <- substr(cn, 1, 3)
+covar <- cn[ss == "lip"]
+outcome <- "mdi"
+confound <- cn[ss %in% c("chi", "mom")]
+```
+
+
+```{r real}
+real <- niehs_outer(dat, outcome, confound, covar)
+```
+
