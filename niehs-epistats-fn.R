@@ -8,9 +8,9 @@
 #' @param covar vector of names of covariates of interest
 #' @param nfac number of PCA factors
 #' @param plot whether to plot results
-niehs_outer <- function(dat, y, confound, covar, nfac = NULL, plot = T) {
+niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T) {
     # Get C&RT
-    crt1 <- run_crt(dat, y, confound, covar)
+    crt1 <- run_crt(dat, y, confound, covar, cp1)
     
     # Run pca
     pca1b <- pca1(dat, covar)
@@ -88,7 +88,9 @@ pca1 <- function(dat, covar, nfac = NULL) {
 #' @param y name of outcome variable
 #' @param confound vector of names of confounding variables
 #' @param covar vector of names of covariates of interest
-run_crt <- function(dat, y, confound, covar) {
+run_crt <- function(dat, y, confound, covar, cp1) {
+    
+    fit.control <- rpart.control(xval = 100, cp = cp1, minbucket = 5, maxcompete = 4)
     
     # Get matrix of y and covar
     residxy <- dat[, c(y, covar)]
@@ -215,6 +217,9 @@ plot_load <- function(pca1b) {
 #' @param groupings match lmout1 results to lmoutPCA results
 plot_reg <- function(lmout1, lmoutPCA, groupings) {
     
+    # number of pcs
+    nc <- length(unique(groupings[, 2]))
+    
     # Add grouping and model type
     rownames(groupings) <- groupings[, 1]
     gr1 <- groupings[lmout1$Variable, 2]
@@ -228,6 +233,16 @@ plot_reg <- function(lmout1, lmoutPCA, groupings) {
     regall <- mutate(regall, coltype = paste0(substr(Type, 4, 4), 
                                               substr(Model, 1, 1)))
     regall$coltype <- factor(regall$coltype, levels = c("ur", "mr", "uP", "mP"))
+    
+    
+    # Reorder x axis
+    regall$Variable <- factor(regall$Variable)
+    lev1 <- levels(regall$Variable)
+    wh1 <- which(substr(lev1, 1, 2) == "rP")
+    wh2 <- which(substr(lev1, 1, 2) != "rP")
+    lev1 <- lev1[c(wh1, wh2)]
+    regall$Variable <- factor(regall$Variable, levels = lev1)
+    
     
     # Plot output
     pd <- position_dodge(.4)
@@ -246,8 +261,10 @@ plot_reg <- function(lmout1, lmoutPCA, groupings) {
         ylab("Change per SD increase") + 
         theme(text = element_text(size = 14)) + 
         theme(legend.position = "bottom") + 
-        theme(axis.text.x = element_text(angle = 45, hjust = 1))
-    g1 <- g1 + facet_wrap(~ Group, scales = "free_x", ncol = 4)
+        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    
+    nc1 <- 
+    g1 <- g1 + facet_wrap(~ Group, scales = "free_x", ncol = 3)
     
 
  
