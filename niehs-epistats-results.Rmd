@@ -11,7 +11,7 @@ output:
 ---
 
 
-```{r setup}
+```{r setup, echo = F, message = F, warning = F}
 # load knitr package 
 library(knitr)
 
@@ -59,7 +59,7 @@ confound <- "Z"
 
 
 ```{r sim1}
-sim1 <- niehs_outer(dat, outcome, confound, covar)
+sim1 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.02)
 ```
 
 
@@ -74,7 +74,7 @@ confound <- paste0("z", 1 : 3)
 
 
 ```{r sim2}
-sim2 <- niehs_outer(dat, outcome, confound, covar)
+sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.025)
 ```
 
 
@@ -91,6 +91,6 @@ confound <- cn[ss %in% c("chi", "mom")]
 
 
 ```{r real}
-real <- niehs_outer(dat, outcome, confound, covar)
+real <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.025)
 ```
 
