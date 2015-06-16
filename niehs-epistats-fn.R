@@ -10,6 +10,7 @@
 #' @param plot whether to plot results
 niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T) {
     # Get C&RT
+    crt0 <- run_crt(dat, y, confound, covar, 0)
     crt1 <- run_crt(dat, y, confound, covar, cp1)
     
     # Run pca
@@ -42,16 +43,23 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T) {
     preg <- plot_reg(reg1, regPCA, groupings)
     
     # Get output 
-    out <- list(crt = crt1, pca1 = pca1b, pload = pload,
+    out <- list(crt0 = crt0, crt1 = crt1, pca1 = pca1b, pload = pload,
         dat = full_dat, reg1 = reg1, regPCA = regPCA,
         groupings = groupings, preg = preg)
     
     if(plot) {
-        plotcp(crt1)
+        fit.control <- rpart.control(xval = 100, cp = 0, 
+          minbucket = 5, maxcompete = 4)
+        plotcp(crt0)
+        fit.control <- rpart.control(xval = 100, cp = cp1, 
+          minbucket = 5, maxcompete = 4)
+        
         plot(crt1)
         text(crt1)
         print(pload)
         print(preg)
+        fit.control <- rpart.control(xval = 100, cp = 0, 
+          minbucket = 5, maxcompete = 4)
     }
     
     return(out)
@@ -89,7 +97,7 @@ pca1 <- function(dat, covar, nfac = NULL) {
 #' @param confound vector of names of confounding variables
 #' @param covar vector of names of covariates of interest
 run_crt <- function(dat, y, confound, covar, cp1) {
-    
+    # Set output
     fit.control <- rpart.control(xval = 100, cp = cp1, minbucket = 5, maxcompete = 4)
     
     # Get matrix of y and covar
@@ -203,7 +211,7 @@ plot_load <- function(pca1b) {
         geom_bar(stat = "identity") + theme_bw() + theme(legend.position = "none") +
         scale_fill_manual(guide = "none", values = colsload) + xlab("") +
         ylab("Rotated PCA loadings") +
-        facet_wrap(~ PC, nrow = 1) + theme(text = element_text(size = 14),
+        facet_wrap(~ PC, ncol = 1) + theme(text = element_text(size = 14),
         axis.text.x = element_text(angle = 90, hjust = 1)) 
 
     gload
