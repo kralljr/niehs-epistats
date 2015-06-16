@@ -8,31 +8,51 @@
 #' @param covar vector of names of covariates of interest
 #' @param nfac number of PCA factors
 #' @param plot whether to plot results
-niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T) {
+niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T, std1 = T, log1 = F) {
     # Get C&RT
     crt0 <- run_crt(dat, y, confound, covar, 0)
     crt1 <- run_crt(dat, y, confound, covar, cp1)
+
+
+    if(log1 == T) {
+      dat[, covar] <- log(dat[, covar])
+    }
     
     # Run pca
-    pca1b <- pca1(dat, covar)
+    pca1b <- pca1(dat, covar, nfac = nfac)
     sc1 <- pca1b$scores
     nc <- ncol(sc1)
     pcan <- paste0("rPC", seq(1, nc))
     colnames(sc1) <- pcan
-    
+   
+    # Get variance explained
+    varexp <- sum(pca1b$values[1 : nc]) / length(pca1b$values)
+    varexp <- round(varexp * 100, 1)
+
+
+
+    # Get variability in y explained by confoundersi
+    eqn1 <- paste(y, "~", paste(confound, collapse = "+"))
+    varconf <- summary(lm(eval(eqn1), data = dat))$r.squared
+    varconf <- round(varconf * 100, 1)
+
+
     # Plot loadings
     pload <- plot_load(pca1b)
-    
+  
+    # Scale data
+    sd1 <- apply(dat[, covar], 2, sd)
+    dat[, covar] <- sweep(dat[, covar], 2, sd1, "/")  
     
     # Get full dataset
     full_dat <- data.frame(dat, sc1)
     
     # Do standard regression
-    reg1 <- mix_regress(full_dat, y, confound, covar, std = T)
+    reg1 <- mix_regress(full_dat, y, confound, covar, std = std1)
     
     # Do regression on PCA
-    regPCA <- mix_regress(full_dat, y, confound, pcan, std = T)
-    
+    regPCA <- mix_regress(full_dat, y, confound, pcan, std = std1)
+
     # get groupings
     load1 <- pca1b$load[, 1 : nc]
     pca2 <- pcan[apply(load1, 1, which.max)]
@@ -45,7 +65,8 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T) {
     # Get output 
     out <- list(crt0 = crt0, crt1 = crt1, pca1 = pca1b, pload = pload,
         dat = full_dat, reg1 = reg1, regPCA = regPCA,
-        groupings = groupings, preg = preg)
+        groupings = groupings, preg = preg, varexp = varexp,
+	varconf = varconf)
     
     if(plot) {
         fit.control <- rpart.control(xval = 100, cp = 0, 
@@ -53,11 +74,11 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T) {
         plotcp(crt0)
         fit.control <- rpart.control(xval = 100, cp = cp1, 
           minbucket = 5, maxcompete = 4)
-        
+        #par(oma = c(1, 1, 1, 1)) 
         plot(crt1)
         text(crt1)
         print(pload)
-        print(preg)
+        print(preg$g1)
         fit.control <- rpart.control(xval = 100, cp = 0, 
           minbucket = 5, maxcompete = 4)
     }
@@ -134,7 +155,9 @@ run_crt <- function(dat, y, confound, covar, cp1) {
 mix_regress <- function(dat, y, confound, covar, std = T) {
     
     # Specify outcome and confounding
-    eqn1 <- paste(y, "~", paste(confound, collapse = "+"))
+    #eqn1 <- paste(y, "~", paste(confound, collapse = "+"))
+    eqn1 <- paste(y, "~") 
+
 
     # Get univariate results
     lmout <- matrix(nrow = length(covar), ncol = 4)
@@ -148,6 +171,7 @@ mix_regress <- function(dat, y, confound, covar, std = T) {
     rownames(lmout) <- covar
     
     # Get multivariate results
+    eqn1 <- paste(y, "~", paste(confound, collapse = "+"))
     eqn2 <- paste(eqn1, "+", paste(covar, collapse = "+"))
     temp <- lm(eqn2, data = dat) %>% summary
     mlmout <- temp$coef[covar, ]
@@ -158,6 +182,7 @@ mix_regress <- function(dat, y, confound, covar, std = T) {
     lmout <- mutate(lmout, Type = "lm.univar", Variable = rownames(lmout))
     mlmout <- mutate(mlmout, Type = "lm.multivar", Variable = rownames(mlmout))
     lmout <- full_join(lmout, mlmout)
+    lmout$Type <- factor(lmout$Type, levels = c("lm.univar", "lm.multivar"))
     
     # Add confidence intervals
     tstat1 <- qt(0.976, nrow(dat) - 1)
@@ -240,7 +265,7 @@ plot_reg <- function(lmout1, lmoutPCA, groupings) {
     regall <- mutate(regall, corsx = 1.5)
     regall <- mutate(regall, coltype = paste0(substr(Type, 4, 4), 
                                               substr(Model, 1, 1)))
-    regall$coltype <- factor(regall$coltype, levels = c("ur", "mr", "uP", "mP"))
+    regall$coltype <- factor(regall$coltype, levels = c( "uP", "mP", "ur", "mr"))
     
     
     # Reorder x axis
@@ -271,13 +296,12 @@ plot_reg <- function(lmout1, lmoutPCA, groupings) {
         theme(legend.position = "bottom") + 
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
     
-    nc1 <- 
-    g1 <- g1 + facet_wrap(~ Group, scales = "free_x", ncol = 3)
+    g1 <- g1 + facet_wrap(~ Group, scales = "free_x", ncol = 4)
     
 
  
         
-    g1
+    list(g1 = g1, data = regall)
     
 }
 
