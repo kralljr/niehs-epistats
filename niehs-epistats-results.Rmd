@@ -16,8 +16,9 @@ output:
 library(knitr)
 
 # set knitr options
-opts_chunk$set(message=FALSE, echo = F, cache = T,
-    warning = F,fig.height = 5, fig.width = 10, tidy = F)
+opts_chunk$set(message=FALSE, echo = F,
+    warning = F)
+    #fig.height = 5, fig.width = 10)
 
 ```
 
@@ -59,7 +60,7 @@ confound <- "Z"
 
 
 ```{r sim1}
-sim1 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.02)
+sim1 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.02, nfac = 4)
 ```
 
 
@@ -74,7 +75,7 @@ confound <- paste0("z", 1 : 3)
 
 
 ```{r sim2}
-sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.025)
+sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0, nfac = 6)
 ```
 
 
@@ -86,12 +87,68 @@ cn <- colnames(dat)
 ss <- substr(cn, 1, 3)
 covar <- cn[ss == "lip"]
 outcome <- "mdi"
-dat[, covar] <- log(dat[, covar])
 confound <- cn[ss %in% c("chi", "mom")]
 ```
 
 
 ```{r real, fig.height = 10, fig.width = 8}
-real <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.03)
+real <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.03, nfac = 4, log1 = T)
 ```
 
+
+```{r varexp}
+varexp <- c(sim1$varexp, sim2$varexp, real$varexp)
+varconf <- c(sim1$varconf, sim2$varconf, real$varconf)
+varexp <- data.frame(c("Sim 1", "Sim 2", "Real data"), varexp, varconf)
+colnames(varexp) <- c("Dataset", "% variance in exposures explained by rPCs", "% variance in y explained by confounders")
+kable(varexp)
+```
+
+
+# Statistical significance for regression results
+
+## Simulated dataset 1
+
+```{r sigs}
+dat1 <- sim1
+
+dat1 <- dat1[["preg"]][["data"]]
+wh1 <- which(dat1$LB > 0 | dat1$UB < 0)
+dat1 <- dplyr::select(dat1, Estimate, Variable, LB, UB, Type, Group)
+dat1[, c(1, 3, 4)] <- round(dat1[, c(1, 3, 4)], 2)
+kable(dat1[wh1,])
+
+
+```
+
+
+## Simulated dataset 2
+
+
+
+```{r sigs2}
+dat1 <- sim2
+
+dat1 <- dat1[["preg"]][["data"]]
+wh1 <- which(dat1$LB > 0 | dat1$UB < 0)
+dat1 <- dplyr::select(dat1, Estimate, Variable, LB, UB, Type, Group)
+dat1[, c(1, 3, 4)] <- round(dat1[, c(1, 3, 4)], 2)
+kable(dat1[wh1,])
+
+
+```
+
+
+## Real world dataset
+
+```{r sigr}
+dat1 <- real
+
+dat1 <- dat1[["preg"]][["data"]]
+wh1 <- which(dat1$LB > 0 | dat1$UB < 0)
+dat1 <- dplyr::select(dat1, Estimate, Variable, LB, UB, Type, Group)
+dat1[, c(1, 3, 4)] <- round(dat1[, c(1, 3, 4)], 2)
+kable(dat1[wh1,])
+
+
+```
