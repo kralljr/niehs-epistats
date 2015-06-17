@@ -8,11 +8,14 @@
 #' @param covar vector of names of covariates of interest
 #' @param nfac number of PCA factors
 #' @param plot whether to plot results
-niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T, std1 = T, log1 = F) {
+niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T, 
+  std1 = T, log1 = F, labels1 = NULL) {
     # Get C&RT
-    crt0 <- run_crt(dat, y, confound, covar, 0)
+    crt0 <- run_crt(dat, y, confound, covar, 0)$tree
     crt1 <- run_crt(dat, y, confound, covar, cp1)
 
+    residxy <- crt1$residxy
+    crt1 <- crt1$tree
 
     if(log1 == T) {
       dat[, covar] <- log(dat[, covar])
@@ -41,8 +44,8 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T, std
     pload <- plot_load(pca1b)
   
     # Scale data
-    sd1 <- apply(dat[, covar], 2, sd)
-    dat[, covar] <- sweep(dat[, covar], 2, sd1, "/")  
+sd1 <- apply(dat[, covar], 2, sd)
+dat[, covar] <- sweep(dat[, covar], 2, sd1, "/")  
     
     # Get full dataset
     full_dat <- data.frame(dat, sc1)
@@ -60,13 +63,13 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T, std
     colnames(groupings) <- c("covar", "rPC")
     
     # Plot regression and PCA results
-    preg <- plot_reg(reg1, regPCA, groupings)
+    preg <- plot_reg(reg1, regPCA, groupings, labels1)
     
     # Get output 
     out <- list(crt0 = crt0, crt1 = crt1, pca1 = pca1b, pload = pload,
         dat = full_dat, reg1 = reg1, regPCA = regPCA,
         groupings = groupings, preg = preg, varexp = varexp,
-	varconf = varconf)
+	varconf = varconf, residxy = residxy)
     
     if(plot) {
         fit.control <- rpart.control(xval = 100, cp = 0, 
@@ -75,9 +78,11 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T, std
         fit.control <- rpart.control(xval = 100, cp = cp1, 
           minbucket = 5, maxcompete = 4)
         #par(oma = c(1, 1, 1, 1)) 
-        plot(crt1)
-        text(crt1)
-        print(pload)
+        #plot(crt1)
+        #text(crt1)
+        fancyRpartPlot(crt1)
+
+	print(pload)
         print(preg$g1)
         fit.control <- rpart.control(xval = 100, cp = 0, 
           minbucket = 5, maxcompete = 4)
@@ -139,7 +144,7 @@ run_crt <- function(dat, y, confound, covar, cp1) {
     # Find tree
     tree2 <- rpart(eval(eqn2) , data = residxy, control = fit.control)
     
-    return(tree2)
+    return(list(tree = tree2, residxy = residxy))
 }
 
 # Can use plotcp(run_crt(dat)), plot(run_crt(dat))/ text(run_crt(dat))
@@ -183,8 +188,8 @@ mix_regress <- function(dat, y, confound, covar, std = T) {
     mlmout <- mutate(mlmout, Type = "lm.multivar", Variable = rownames(mlmout))
     lmout <- full_join(lmout, mlmout)
     lmout$Type <- factor(lmout$Type, levels = c("lm.univar", "lm.multivar"))
-    
-    # Add confidence intervals
+
+# Add confidence intervals
     tstat1 <- qt(0.976, nrow(dat) - 1)
     LB <- lmout[, 1] - tstat1 * lmout[, 2]
     UB <- lmout[, 1] + tstat1 * lmout[, 2]
@@ -248,7 +253,7 @@ plot_load <- function(pca1b) {
 #' @param lmout1 results from mix_regress for standard regression
 #' @param lmoutPCA results from mix_regress for PCA
 #' @param groupings match lmout1 results to lmoutPCA results
-plot_reg <- function(lmout1, lmoutPCA, groupings) {
+plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL) {
     
     # number of pcs
     nc <- length(unique(groupings[, 2]))
@@ -276,7 +281,11 @@ plot_reg <- function(lmout1, lmoutPCA, groupings) {
     lev1 <- lev1[c(wh1, wh2)]
     regall$Variable <- factor(regall$Variable, levels = lev1)
     
-    
+    if(!is.null(labels1)) {
+        regall$Variable <- factor(regall$Variable, levels = labels1[, 1], labels = labels1[, 2])
+    }
+
+
     # Plot output
     pd <- position_dodge(.4)
     cols <- brewer.pal(3, "Dark2")[2 : 3]
@@ -304,4 +313,73 @@ plot_reg <- function(lmout1, lmoutPCA, groupings) {
     list(g1 = g1, data = regall)
     
 }
+
+
+
+
+#' Function to get 
+#' 
+#' @param dat1 results from niehs_outer
+#' @param fills matrix of how to fill in, variable, direction, value, order
+#' @param cols vector of colors for variables
+#' @param lim1 x-axis limits for density plots
+#' @param size1 size of text
+getden <- function(dat1, fills, cols, lim1, size1 = 20) { 
+	# Get residuals
+	datres <- dat1$resid
+	mres <- melt(datres)
+
+	for(i in 1 : nrow(fills)) { 
+		# restrict to one variable
+		mres2 <- filter(mres, variable == fills[i, 1])
+
+		# get density
+		den1 <- density(mres2$value)
+
+
+		den2 <- den1
+		if(fills[i, 2] == ">=") {
+
+			den2$y <- ifelse(den1$x >= fills[i, 3], den1$y, NA)
+		} else {
+
+			den2$y <- ifelse(den1$x < fills[i, 3], den1$y,  NA)
+		}
+
+		den2 <- data.frame(den1$x, den1$y, den2$x, den2$y)
+		den2 <- mutate(den2, variable = fills[i, 1], type = fills[i, 4]) 
+		colnames(den2) <- c("xo", "yo", "x1", "y1", "variable", "type")
+
+		if(i == 1) { 
+			datout <- den2
+		}else{
+			datout <- full_join(datout, den2)
+		}
+	}
+
+
+	datout$variable <- factor(datout$variable, levels = fills[, 1])
+	datout$type <- factor(datout$type, levels = fills[, 4])
+
+
+	dat2 <- datout[complete.cases(datout), ]
+	dat2 <- dat2[order(dat2$x1), ]
+
+	g1 <- ggplot(datout, aes(x = xo, y = yo))  +
+
+		scale_x_continuous(limits = lim1) +
+		geom_line() +
+		theme_bw() + xlab("Residuals") + ylab("Density") +
+		theme(text = element_text(size = size1)) +
+
+		geom_ribbon(data = dat2, aes(ymin = 0, x = x1, ymax = y1, fill = variable))  +
+		scale_fill_manual(values = cols, guide = F) +
+		facet_wrap(~ variable, nrow = 3, scales = "free")
+
+
+
+	return(list(datout = datout, g1 = g1))
+}
+
+
 
