@@ -33,6 +33,8 @@ library(MASS)
 library(RColorBrewer)
 library(reshape2)
 library(rpart)
+library(gridExtra)
+library(rattle)
 ```
 
 
@@ -215,9 +217,9 @@ kable(dat1[wh1,])
 
 ```{r hist}
 
-var1 <- c("X7", "X5", "X7", "X5", "X1", "X7", "X5", "X1")
-lt <- c("<", ">=", ">=", ">=", "<", ">=", "<", "<")
-val <- c(-0.41, -0.12, -0.41, -0.026, 0.16, -0.41, -0.026, 0.76)
+var1 <- c("X7", "X5", "X7", "X5", "X1", "X7", "X5", "X1", "X7", "X5", "X1")
+lt <- c("<", ">=", "<", "<", ">=", ">=", ">=", "<", ">=", "<", ">=")
+val <- c(-0.41, -0.12, -0.41, -0.12, 0.26,-0.41, -0.026, 0.16, -0.41, -0.026, 0.76)
 fills1 <- data.frame(var1, lt, val, seq(1, length(var1)), stringsAsFactors = F)
 
 #seq1 <- c(1, 3, 6, 2, 4, 7, 1, 5, 8)
@@ -226,13 +228,79 @@ fills1 <- data.frame(var1, lt, val, seq(1, length(var1)), stringsAsFactors = F)
 #fills1 <- data.frame(fills1, seq(1, nrow(fills1)))
 
 cols1 <- brewer.pal(4, "Dark2")
+size2 <- 10
+
+g4a <- getden(sim1, fills1[1 : 2,], cols1, lim1 = c(-3, 3), size1 = size2)$g1
 
 
-getden(sim1, fills1[1 : 2,], cols1, lim1 = c(-3, 3))$g1
+g4b <- getden(sim1, fills1[3 : 5,], cols1, lim1 = c(-3, 3), size1 = size2)$g1
+g4c <- getden(sim1, fills1[6 : 8,], cols1, lim1 = c(-3, 3), size1 =size2)$g1
 
 
-getden(sim1, fills1[3 : 5,], cols1, lim1 = c(-3, 3))$g1
-getden(sim1, fills1[6 : 8,], cols1, lim1 = c(-3, 3))$g1
+g4d <- getden(sim1, fills1[9 : 11,], cols1, lim1 = c(-3, 3), size1 =size2)$g1
+```
 
+
+# Plots for abstract, poster, presentation
+
+## Plots for abstract
+```{r}
+# Combined loadings and results for simulated data1
+
+pdf("fig1a.pdf", height = 2.5, width = 4)
+sim1$pload
+graphics.off()
+
+pdf("fig1b.pdf", height = 2.5, width = 6)
+sim1[["preg"]][["g1"]]
+graphics.off()
+
+
+
+
+pdf("fig5a.pdf", height = 1.8, width = 8)
+sim2$pload
+graphics.off()
+
+pdf("fig5b.pdf", height = 2, width = 9)
+sim2[["preg"]][["g1"]]
+graphics.off()
+
+
+pdf("fig2a.pdf", height = 2.7, width = 9)
+real$pload +  theme(axis.text.x = element_text(size = 5))
+graphics.off()
+
+pdf("fig2.pdf", height = 3, width = 9)
+real[["preg"]][["g1"]]
+graphics.off()
+
+pdf("fig3.pdf", height = 4, width = 9)
+fancyRpartPlot(sim1[["crt1"]])
+graphics.off()
+
+h1 <- 1.5
+w1 <- 1.5
+h2 <- 2.25
+pdf("fig4a.pdf", height = h1, width = w1)
+g4a
+graphics.off()
+
+
+pdf("fig4b.pdf", height = h2, width = w1)
+g4b
+graphics.off()
+
+
+
+pdf("fig4c.pdf", height = h2, width = w1)
+g4c
+graphics.off()
+
+
+
+pdf("fig4d.pdf", height = h2, width = w1)
+g4d
+graphics.off()
 
 ```

@@ -241,7 +241,7 @@ plot_load <- function(pca1b) {
         geom_bar(stat = "identity") + theme_bw() + theme(legend.position = "none") +
         scale_fill_manual(guide = "none", values = colsload) + xlab("") +
         ylab("Rotated PCA loadings") +
-        facet_wrap(~ PC, ncol = 1) + theme(text = element_text(size = 14),
+        facet_wrap(~ PC, nrow = 1) + theme(text = element_text(size = 10),
         axis.text.x = element_text(angle = 90, hjust = 1)) 
 
     gload
@@ -290,9 +290,9 @@ plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL) {
     pd <- position_dodge(.4)
     cols <- brewer.pal(3, "Dark2")[2 : 3]
     g1 <- ggplot(regall, aes(x = Variable, y = Estimate, colour = Model, alpha = Type, shape = Type)) +
-        geom_errorbar(aes(ymin = LB, ymax = UB, alpha = Type), size = 1.2, width = 0,
+        geom_errorbar(aes(ymin = LB, ymax = UB, alpha = Type), size = 1.1, width = 0,
                       position = pd) +
-        geom_point(size = 2.2, width = 0,
+        geom_point(size = 1.7, width = 0,
                    position = pd) +
         theme_bw() +     geom_hline(aes(yintercept = 0), colour = "grey50", 
                                     linetype = "dashed") +
@@ -301,11 +301,11 @@ plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL) {
         scale_alpha_manual(values = c(0.5, 1), labels = c("Unadjusted", "Adjusted")) +
         scale_shape_manual(values = c(16, 16), guide = "none") + xlab("") +
         ylab("Change per SD increase") + 
-        theme(text = element_text(size = 14)) + 
-        theme(legend.position = "bottom") + 
+        theme(text = element_text(size = 10)) + 
+        theme(legend.position = "right") + 
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
     
-    g1 <- g1 + facet_wrap(~ Group, scales = "free_x", ncol = 4)
+    g1 <- g1 + facet_wrap(~ Group, scales = "free_x", nrow = 1)
     
 
  
@@ -374,7 +374,7 @@ getden <- function(dat1, fills, cols, lim1, size1 = 20) {
 
 		geom_ribbon(data = dat2, aes(ymin = 0, x = x1, ymax = y1, fill = variable))  +
 		scale_fill_manual(values = cols, guide = F) +
-		facet_wrap(~ variable, nrow = 3, scales = "free")
+		facet_wrap(~ variable, ncol = 1)
 
 
 
