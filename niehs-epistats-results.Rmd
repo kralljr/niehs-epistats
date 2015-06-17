@@ -56,11 +56,14 @@ dat <- read.csv("DataSet1.csv", stringsAsFactors = F)
 covar <- paste0("X", seq(1, 7))
 outcome <- "Y"
 confound <- "Z"
+
+covar1 <- c(paste0("rPC", seq(1, 4)), toupper(covar))
+labels1 <- data.frame(covar1, covar1)
 ```
 
 
 ```{r sim1}
-sim1 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.02, nfac = 4)
+sim1 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.02, nfac = 4, labels1 = labels1)
 ```
 
 
@@ -71,11 +74,17 @@ dat <- read.csv("DataSet2.csv", stringsAsFactors = F)
 covar <- paste0("x", seq(1, 14))
 outcome <- "y"
 confound <- paste0("z", 1 : 3)
+
+
+pc1 <- paste0("rPC", seq(1, 6))
+covar1 <- c(pc1, covar)
+covar2 <- c(pc1, toupper(covar))
+labels1 <- data.frame(covar1, covar2)
 ```
 
 
 ```{r sim2}
-sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0, nfac = 6)
+sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.03, nfac = 6, labels1 = labels1)
 ```
 
 
@@ -88,11 +97,59 @@ ss <- substr(cn, 1, 3)
 covar <- cn[ss == "lip"]
 outcome <- "mdi"
 confound <- cn[ss %in% c("chi", "mom")]
+
+
+# get labels
+
+# Separate into strings/ numbers
+ss1 <- strsplit(covar, "_")
+type1 <- sapply(ss1, function(x) x[2])
+type2 <- sapply(ss1, function(x) x[3])
+
+
+# Fix PCB numbers
+wh1 <- which(substr(type1, 1, 3) == "pcb") 
+type2[wh1] <- substring(type1[wh1], 4)
+type1[wh1] <- substr(type1[wh1], 1, 3)
+
+# Fix DDE
+type1[type1 == "pp"] <- "pp_dde" 
+
+# Get orders
+type1 <- toupper(type1)
+type2 <- as.numeric(type2)
+types <- data.frame(type1, type2)
+ords1 <- order(types[, 1], types[, 2])
+
+# Fix 138/158, 196/203
+type2a <- sapply(ss1, function(x) x[3])
+wh1 <- which(!is.na(type2a) & type1 == "PCB")
+type2[wh1] <- paste0(type2[wh1], "_", type2a[wh1])
+
+
+# Merge to get label
+labs <- paste0(type1, "_", type2)
+labs[which(is.na(type2))] <- type1[which(is.na(type2))]
+
+
+# Add in rPCs
+lab1 <- paste0("rPC", seq(1, 4))
+
+labels1 <- cbind(c(lab1, covar[ords1]), c(lab1, labs[ords1]))
+
+
+# Rename dataset
+colnames(dat)[colnames(dat) %in% covar] <- labs 
+
+
+labels1 <- cbind(c(lab1, labs[ords1]), c(lab1, labs[ords1]))
+
+covar <- labs
 ```
 
 
 ```{r real, fig.height = 10, fig.width = 8}
-real <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.03, nfac = 4, log1 = T)
+real <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.03, nfac = 4, log1 = T, labels1 = labels1)
 ```
 
 
@@ -129,6 +186,7 @@ kable(dat1[wh1,])
 ```{r sigs2}
 dat1 <- sim2
 
+
 dat1 <- dat1[["preg"]][["data"]]
 wh1 <- which(dat1$LB > 0 | dat1$UB < 0)
 dat1 <- dplyr::select(dat1, Estimate, Variable, LB, UB, Type, Group)
@@ -149,6 +207,32 @@ wh1 <- which(dat1$LB > 0 | dat1$UB < 0)
 dat1 <- dplyr::select(dat1, Estimate, Variable, LB, UB, Type, Group)
 dat1[, c(1, 3, 4)] <- round(dat1[, c(1, 3, 4)], 2)
 kable(dat1[wh1,])
+
+
+```
+
+# Get histograms to match C&RT output
+
+```{r hist}
+
+var1 <- c("X7", "X5", "X7", "X5", "X1", "X7", "X5", "X1")
+lt <- c("<", ">=", ">=", ">=", "<", ">=", "<", "<")
+val <- c(-0.41, -0.12, -0.41, -0.026, 0.16, -0.41, -0.026, 0.76)
+fills1 <- data.frame(var1, lt, val, seq(1, length(var1)), stringsAsFactors = F)
+
+#seq1 <- c(1, 3, 6, 2, 4, 7, 1, 5, 8)
+#fills1 <- fills1[seq1, ]
+
+#fills1 <- data.frame(fills1, seq(1, nrow(fills1)))
+
+cols1 <- brewer.pal(4, "Dark2")
+
+
+getden(sim1, fills1[1 : 2,], cols1, lim1 = c(-3, 3))$g1
+
+
+getden(sim1, fills1[3 : 5,], cols1, lim1 = c(-3, 3))$g1
+getden(sim1, fills1[6 : 8,], cols1, lim1 = c(-3, 3))$g1
 
 
 ```
