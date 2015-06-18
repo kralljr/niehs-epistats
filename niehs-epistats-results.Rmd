@@ -86,7 +86,7 @@ labels1 <- data.frame(covar1, covar2)
 
 
 ```{r sim2}
-sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.03, nfac = 6, labels1 = labels1)
+sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.015, nfac = 6, labels1 = labels1)
 ```
 
 
