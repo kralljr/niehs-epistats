@@ -16,6 +16,7 @@ All code was written using R version 3.1
 To obtain our results, first install the `rmarkdown` package from CRAN.
 
 `library(rmarkdown)`
+
 `render("niehs-epistats-results.Rmd")`
 
 ## Using our functions
