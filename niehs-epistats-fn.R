@@ -4,7 +4,7 @@
 #' 
 #' @param dat dataframe of outcome y, confounders z, and covariates x
 #' @param y name of outcome variable
-#' @param confound vector of names of confounding variables
+#' @param confound equation for model of confounding variables
 #' @param covar vector of names of covariates of interest
 #' @param nfac number of PCA factors
 #' @param plot whether to plot results
@@ -35,7 +35,7 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T,
 
 
     # Get variability in y explained by confoundersi
-    eqn1 <- paste(y, "~", paste(confound, collapse = "+"))
+    eqn1 <- paste(y, "~", confound)
     varconf <- summary(lm(eval(eqn1), data = dat))$r.squared
     varconf <- round(varconf * 100, 1)
 
@@ -44,8 +44,8 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T,
     pload <- plot_load(pca1b)
   
     # Scale data
-sd1 <- apply(dat[, covar], 2, sd)
-dat[, covar] <- sweep(dat[, covar], 2, sd1, "/")  
+    sd1 <- apply(dat[, covar], 2, sd)
+    dat[, covar] <- sweep(dat[, covar], 2, sd1, "/")  
     
     # Get full dataset
     full_dat <- data.frame(dat, sc1)
@@ -80,7 +80,11 @@ dat[, covar] <- sweep(dat[, covar], 2, sd1, "/")
         #par(oma = c(1, 1, 1, 1)) 
         #plot(crt1)
         #text(crt1)
-        fancyRpartPlot(crt1)
+        #fancyRpartPlot(crt1)
+	bcol <- brewer.pal(5, "Blues")
+        prp(crt1, branch = 1, extra = 1, box.col = bcol[1], 
+	    split.box.col = bcol[2], fallen.leaves = T)
+
 
 	print(pload)
         print(preg$g1)
@@ -120,7 +124,7 @@ pca1 <- function(dat, covar, nfac = NULL) {
 #' 
 #' @param dat dataframe of outcome y, confounders z, and covariates x
 #' @param y name of outcome variable
-#' @param confound vector of names of confounding variables
+#' @param confound equation for model of confounding variables
 #' @param covar vector of names of covariates of interest
 run_crt <- function(dat, y, confound, covar, cp1) {
     # Set output
@@ -130,7 +134,7 @@ run_crt <- function(dat, y, confound, covar, cp1) {
     residxy <- dat[, c(y, covar)]
 
     # First regress out effects of confounders
-    confound1 <- paste("~", paste(confound, collapse = "+"))
+    confound1 <- paste("~", confound)
     for(i in 1 : ncol(residxy)) {
         eqn1 <- paste(colnames(residxy)[i], confound1)
         resid1 <- lm(eval(eqn1), data  = dat)$resid 
@@ -155,12 +159,12 @@ run_crt <- function(dat, y, confound, covar, cp1) {
 #' 
 #' @param dat dataframe of outcome y, confounders z, and covariates x
 #' @param y name of outcome variable
-#' @param confound vector of names of confounding variables
+#' @param confound equation for model of confounding variables
 #' @param covar vector of names of covariates of interest
 mix_regress <- function(dat, y, confound, covar, std = T) {
     
     # Specify outcome and confounding
-    #eqn1 <- paste(y, "~", paste(confound, collapse = "+"))
+    #eqn1 <- paste(y, "~", confound)
     eqn1 <- paste(y, "~") 
 
 
@@ -176,7 +180,7 @@ mix_regress <- function(dat, y, confound, covar, std = T) {
     rownames(lmout) <- covar
     
     # Get multivariate results
-    eqn1 <- paste(y, "~", paste(confound, collapse = "+"))
+    eqn1 <- paste(y, "~", confound)
     eqn2 <- paste(eqn1, "+", paste(covar, collapse = "+"))
     temp <- lm(eqn2, data = dat) %>% summary
     mlmout <- temp$coef[covar, ]
