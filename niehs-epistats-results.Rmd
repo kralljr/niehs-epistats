@@ -35,6 +35,8 @@ library(reshape2)
 library(rpart)
 library(gridExtra)
 library(rattle)
+library(rpart.plot)
+library(splines)
 ```
 
 
@@ -59,8 +61,9 @@ covar <- paste0("X", seq(1, 7))
 outcome <- "Y"
 confound <- "Z"
 
-covar1 <- c(paste0("rPC", seq(1, 4)), toupper(covar))
+covar1 <- c(paste0("rotPC", seq(1, 4)), toupper(covar))
 labels1 <- data.frame(covar1, covar1)
+
 ```
 
 
@@ -78,15 +81,19 @@ outcome <- "y"
 confound <- "z1 + ns(z2, 3) + z3"
 
 
-pc1 <- paste0("rPC", seq(1, 6))
+pc1 <- paste0("rotPC", seq(1, 6))
 covar1 <- c(pc1, covar)
 covar2 <- c(pc1, toupper(covar))
 labels1 <- data.frame(covar1, covar2)
+
+
+colnames(dat)[which(colnames(dat) %in% covar)] <- toupper(covar)
+covar <- toupper(covar)
 ```
 
 
 ```{r sim2}
-sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.015, nfac = 6, labels1 = labels1)
+sim2 <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.015, nfac = 6, labels1 = NULL)
 ```
 
 
@@ -135,7 +142,7 @@ labs[which(is.na(type2))] <- type1[which(is.na(type2))]
 
 
 # Add in rPCs
-lab1 <- paste0("rPC", seq(1, 4))
+lab1 <- paste0("rotPC", seq(1, 4))
 
 labels1 <- cbind(c(lab1, covar[ords1]), c(lab1, labs[ords1]))
 
@@ -151,9 +158,11 @@ covar <- labs
 
 
 ```{r real, fig.height = 10, fig.width = 8}
-real <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.03, nfac = 4, log1 = T, labels1 = labels1)
+real <- niehs_outer(dat, outcome, confound, covar, cp1 = 0.023, nfac = 4, log1 = T, labels1 = labels1)
 ```
 
+
+# Specific results for NIEHS workshop (abstract, poster, presentation)
 
 ```{r varexp}
 varexp <- c(sim1$varexp, sim2$varexp, real$varexp)
@@ -218,6 +227,8 @@ kable(dat1[wh1,])
 ```{r hist}
 
 var1 <- c("X7", "X5", "X7", "X5", "X1", "X7", "X5", "X1", "X7", "X5", "X1")
+
+var1 <- paste0("r", var1)
 lt <- c("<", ">=", "<", "<", ">=", ">=", ">=", "<", ">=", "<", ">=")
 val <- c(-0.41, -0.12, -0.41, -0.12, 0.26,-0.41, -0.026, 0.16, -0.41, -0.026, 0.76)
 fills1 <- data.frame(var1, lt, val, seq(1, length(var1)), stringsAsFactors = F)
@@ -243,9 +254,19 @@ g4d <- getden(sim1, fills1[9 : 11,], cols1, lim1 = c(-3, 3), size1 =size2)$g1
 
 # Plots for abstract, poster, presentation
 
+```{r plot}
+bcol <- brewer.pal(5, "Blues")
+
+
+```
+
+
+
 ## Plots for abstract
-```{r}
+```{r abs, eval = F}
 # Combined loadings and results for simulated data1
+
+
 
 pdf("fig1a.pdf", height = 2.5, width = 4)
 sim1$pload
@@ -304,5 +325,190 @@ graphics.off()
 pdf("fig4d.pdf", height = h2, width = w1)
 g4d
 graphics.off()
+
+```
+
+
+
+
+
+## Plots for poster
+```{r post, eval = F}
+# Combined loadings and results for simulated data
+
+h1 <- 4
+h2 <- 8
+h3 <- 6
+
+
+w1 <- 12
+w2 <- 12
+
+
+
+w3 <- 20
+w4 <- 15
+w5 <- 15
+
+size1 <- 25
+line1 <- 2
+
+
+size1b <- 2
+size2b <- 4.5
+
+
+p1 <- "poster"
+pdf(file.path(p1, "fig1a.pdf"), height = 4, width = 10)
+sim1$pload  + theme(text = element_text(size = size1))
+graphics.off()
+
+pdf(file.path(p1, "fig1b.pdf"), height = 5.5, width = 10)
+ plot_reg_outer(sim1, size1b, size2b)  + theme(text = element_text(size = size1, line = line1))
+graphics.off()
+
+
+
+
+pdf(file.path(p1, "fig5a.pdf"), height = 6, width = 20)
+sim2$pload  + theme(text = element_text(size = size1)) + theme(axis.text.x = element_text(size = 20))
+graphics.off()
+
+pdf(file.path(p1, "fig5b.pdf"), height = 6, width = 15)
+plot_reg_outer(sim2, size1b, size2b)  + theme(text = element_text(size = size1))
+graphics.off()
+
+
+pdf(file.path(p1, "fig2a.pdf"), height = 6, width = 20)
+real$pload  + theme(text = element_text(size = size1)) + theme(axis.text.x = element_text(size = 16))
+graphics.off()
+
+pdf(file.path(p1, "fig2.pdf"), height = 6.5, width = 17)
+plot_reg_outer(real, size1b, size2b) + theme(text = element_text(size = size1))
+graphics.off()
+
+pdf(file.path(p1, "fig3.pdf"), height = h3, width = w5)
+#fancyRpartPlot(sim1[["crt1"]])
+prp(sim1[["crt1"]], branch = 1, extra = 1, box.col = bcol[1], 
+    split.box.col = bcol[2], fallen.leaves = T, cex = 2)
+graphics.off()
+
+
+
+pdf(file.path(p1, "fig6a.pdf"), height = 6, width = 15)
+#fancyRpartPlot(sim1[["crt1"]])
+prp(sim2[["crt1"]], branch = 1, extra = 1, box.col = bcol[1], 
+    split.box.col = bcol[2], fallen.leaves = T, cex = 2)
+graphics.off()
+
+
+pdf(file.path(p1, "fig6b.pdf"), height = 4, width = 15)
+#fancyRpartPlot(sim1[["crt1"]])
+prp(real[["crt1"]], branch = 1, extra = 1, box.col = bcol[1], 
+    split.box.col = bcol[2], fallen.leaves = T, cex = 2)
+graphics.off()
+h1 <- 1.5
+w1 <- 1.5
+h2 <- 2.25
+
+h1 <- 3
+w1 <- 3
+h2 <- 3 * 3/2
+
+size1 <- 20
+
+
+pdf(file.path(p1, "fig4a.pdf"), height = h1, width = w1)
+g4a  + theme(text = element_text(size = size1))
+graphics.off()
+
+
+pdf(file.path(p1, "fig4b.pdf"), height = h2, width = w1)
+g4b  + theme(text = element_text(size = size1))
+graphics.off()
+
+
+
+pdf(file.path(p1, "fig4c.pdf"), height = h2, width = w1)
+g4c  + theme(text = element_text(size = size1))
+graphics.off()
+
+
+
+pdf(file.path(p1, "fig4d.pdf"), height = h2, width = w1)
+g4d  + theme(text = element_text(size = size1))
+graphics.off()
+
+```
+
+
+```{r pres}
+
+
+
+ # Get data to plot
+
+pca1b <- sim2[["pca1"]]
+nc <- ncol(pca1b$scores)
+
+# Get loadings
+load <- pca1b$load[, 1 : nc]
+
+# Find direction of maximum
+dir1 <- sign(colSums(load))
+load <- sweep(load, 2, dir1, "*")
+
+# Get in format to plot
+colnames(load) <- paste0("rotPC", seq(1 : nc))
+mload <- melt(load)
+colnames(mload)[1 : 2] <- c("variable", "PC")
+
+# Specify colors
+colsload <- c(brewer.pal(8, "Dark2"), brewer.pal(9, "Set1"),
+	      brewer.pal(8, "Accent"))
+# Plot
+gload <- ggplot(mload, aes(x = variable, y = value, fill = variable)) +
+	geom_bar(stat = "identity") + theme_bw() + theme(legend.position = "none") +
+	scale_fill_manual(guide = "none", values = colsload) + xlab("") +
+	ylab("Rotated PCA loadings") +
+	facet_wrap(~ PC, nrow = 2) + theme(text = element_text(size = 22),
+	axis.text.x = element_text(angle = 90, hjust = 1))
+
+pdf("pres1.pdf", height = 6, width = 10)
+gload
+graphics.off()
+
+# Get data to plot
+
+size1 <- 2
+size2 <- 5
+
+regall <- sim2[["preg"]][["data"]]
+pd <- position_dodge(.4)
+
+cols <- brewer.pal(3, "Dark2")[2 : 3]
+g1 <- ggplot(regall, aes(x = Variable, y = Estimate, colour = Model, alpha = Type, shape = Type)) +
+	geom_errorbar(aes(ymin = LB, ymax = UB, alpha = Type), size = size1, width = 0,
+		      position = pd) +
+geom_point(size = size2, width = 0,
+	   position = pd) +
+theme_bw() +     geom_hline(aes(yintercept = 0), size = size1, colour = "grey50",
+			    linetype = "dashed") +
+geom_vline(aes(xintercept = corsx), size = size1)+
+scale_color_manual(values = cols, name = "Approach", labels = c("PCA", "Exposures")) +
+scale_alpha_manual(values = c(0.5, 1), labels = c("Unadjusted", "Adjusted")) +
+scale_shape_manual(values = c(16, 16), guide = "none") + xlab("") +
+ylab("Change per SD increase") +
+theme(text = element_text(size = 22)) +
+theme(legend.position = "top") +
+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+g1 <- g1 + facet_wrap(~ Group, scales = "free_x", nrow = 1)
+
+
+pdf("pres2.pdf", height = 6.5, width = 12)
+g1
+graphics.off()
+
 
 ```
