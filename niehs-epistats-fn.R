@@ -25,7 +25,7 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T,
     pca1b <- pca1(dat, covar, nfac = nfac)
     sc1 <- pca1b$scores
     nc <- ncol(sc1)
-    pcan <- paste0("rPC", seq(1, nc))
+    pcan <- paste0("rotPC", seq(1, nc))
     colnames(sc1) <- pcan
    
     # Get variance explained
@@ -60,7 +60,7 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T,
     load1 <- pca1b$load[, 1 : nc]
     pca2 <- pcan[apply(load1, 1, which.max)]
     groupings <- data.frame(rownames(load1), pca2)
-    colnames(groupings) <- c("covar", "rPC")
+    colnames(groupings) <- c("covar", "rotPC")
     
     # Plot regression and PCA results
     preg <- plot_reg(reg1, regPCA, groupings, labels1)
@@ -144,6 +144,9 @@ run_crt <- function(dat, y, confound, covar, cp1) {
 
 
     colnames(residxy) <- paste0("r", colnames(residxy))
+    y <- paste0("r", y)
+    covar <- paste0("r", covar)
+
 
     # Get equation for tree
     eqn2 <- paste(y, "~", paste(covar, collapse = " + "))
@@ -235,7 +238,7 @@ plot_load <- function(pca1b) {
     load <- sweep(load, 2, dir1, "*")
     
     # Get in format to plot
-    colnames(load) <- paste0("rPC", seq(1 : nc))
+    colnames(load) <- paste0("rotPC", seq(1 : nc))
     mload <- melt(load)
     colnames(mload)[1 : 2] <- c("variable", "PC")
     
@@ -298,8 +301,8 @@ plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL, size1 = 1.1, s
     # Reorder x axis
     regall$Variable <- factor(regall$Variable)
     lev1 <- levels(regall$Variable)
-    wh1 <- which(substr(lev1, 1, 2) == "rP")
-    wh2 <- which(substr(lev1, 1, 2) != "rP")
+    wh1 <- which(substr(lev1, 1, 2) == "ro")
+    wh2 <- which(substr(lev1, 1, 2) != "ro")
     lev1 <- lev1[c(wh1, wh2)]
     regall$Variable <- factor(regall$Variable, levels = lev1)
     
