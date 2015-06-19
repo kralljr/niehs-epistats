@@ -69,7 +69,7 @@ niehs_outer <- function(dat, y, confound, covar, cp1, nfac = NULL, plot = T,
     out <- list(crt0 = crt0, crt1 = crt1, pca1 = pca1b, pload = pload,
         dat = full_dat, reg1 = reg1, regPCA = regPCA,
         groupings = groupings, preg = preg, varexp = varexp,
-	varconf = varconf, residxy = residxy)
+	varconf = varconf, residxy = residxy, labels1 = labels1, groupings = groupings)
     
     if(plot) {
         fit.control <- rpart.control(xval = 100, cp = 0, 
@@ -142,7 +142,9 @@ run_crt <- function(dat, y, confound, covar, cp1) {
     }
     residxy <- data.frame(residxy)
 
-    
+
+    colnames(residxy) <- paste0("r", colnames(residxy))
+
     # Get equation for tree
     eqn2 <- paste(y, "~", paste(covar, collapse = " + "))
     # Find tree
@@ -251,13 +253,29 @@ plot_load <- function(pca1b) {
     gload
 }
 
+#' Wrapper for plotting results from niehs_outer
+#' 
+#' @param simout results from niehs_outer
+#' @param size1 size of lines
+#' @param size2 size of points
+plot_reg_outer <- function(simout, size1, size2) {
+    lmout1 <- simout$reg1
+    lmoutPCA <-  simout$regPCA
+    groupings <- simout$groupings
+    labels1 <- simout$labels1
+
+    plot_reg(lmout1, lmoutPCA, groupings, labels1, size1, size2)$g1
+
+
+}
+
 
 #' Function to plot regression results
 #' 
 #' @param lmout1 results from mix_regress for standard regression
 #' @param lmoutPCA results from mix_regress for PCA
 #' @param groupings match lmout1 results to lmoutPCA results
-plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL) {
+plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL, size1 = 1.1, size2 = 1.7) {
     
     # number of pcs
     nc <- length(unique(groupings[, 2]))
@@ -294,13 +312,13 @@ plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL) {
     pd <- position_dodge(.4)
     cols <- brewer.pal(3, "Dark2")[2 : 3]
     g1 <- ggplot(regall, aes(x = Variable, y = Estimate, colour = Model, alpha = Type, shape = Type)) +
-        geom_errorbar(aes(ymin = LB, ymax = UB, alpha = Type), size = 1.1, width = 0,
+        geom_errorbar(aes(ymin = LB, ymax = UB, alpha = Type), size = size1, width = 0,
                       position = pd) +
-        geom_point(size = 1.7, width = 0,
+        geom_point(size = size2, width = 0,
                    position = pd) +
-        theme_bw() +     geom_hline(aes(yintercept = 0), colour = "grey50", 
+        theme_bw() +     geom_hline(aes(yintercept = 0), size = size1, colour = "grey50", 
                                     linetype = "dashed") +
-        geom_vline(aes(xintercept = corsx)) +
+        geom_vline(aes(xintercept = corsx), size = size1)+
         scale_color_manual(values = cols, name = "Approach", labels = c("PCA", "Exposures")) +
         scale_alpha_manual(values = c(0.5, 1), labels = c("Unadjusted", "Adjusted")) +
         scale_shape_manual(values = c(16, 16), guide = "none") + xlab("") +
