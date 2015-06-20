@@ -387,6 +387,8 @@ pdf(file.path(p1, "fig2.pdf"), height = 6.5, width = 17)
 plot_reg_outer(real, size1b, size2b) + theme(text = element_text(size = size1))
 graphics.off()
 
+
+
 pdf(file.path(p1, "fig3.pdf"), height = h3, width = w5)
 #fancyRpartPlot(sim1[["crt1"]])
 prp(sim1[["crt1"]], branch = 1, extra = 1, box.col = bcol[1], 
@@ -439,7 +441,87 @@ pdf(file.path(p1, "fig4d.pdf"), height = h2, width = w1)
 g4d  + theme(text = element_text(size = size1))
 graphics.off()
 
+
 ```
+
+
+```{r real2}
+
+p1 <- "poster"
+
+
+ # Get data to plot
+
+pca1b <- real[["pca1"]]
+nc <- ncol(pca1b$scores)
+
+# Get loadings
+load <- pca1b$load[, 1 : nc]
+
+# Find direction of maximum
+dir1 <- sign(colSums(load))
+load <- sweep(load, 2, dir1, "*")
+
+# Get in format to plot
+colnames(load) <- paste0("rotPC", seq(1 : nc))
+mload <- melt(load)
+colnames(mload)[1 : 2] <- c("variable", "PC")
+
+# Specify colors
+colsload <- c(brewer.pal(8, "Dark2"), brewer.pal(9, "Set1"),
+	      brewer.pal(8, "Accent"))
+# Plot
+gload <- ggplot(mload, aes(x = variable, y = value, fill = variable)) +
+	geom_bar(stat = "identity") + theme_bw() + theme(legend.position = "none") +
+	scale_fill_manual(guide = "none", values = colsload) + xlab("") +
+	ylab("Rotated PCA loadings") +
+	facet_wrap(~ PC, nrow = 2) + theme(text = element_text(size = 25),
+	axis.text.x = element_text(angle = 90, hjust = 1, size = 16))
+
+pdf(file.path(p1, "fig2a.pdf"), height = 6, width = 12)
+gload
+graphics.off()
+
+# Get data to plot
+
+size1 <- 2
+size2 <- 4.5
+
+
+
+
+regall <- real[["preg"]][["data"]]
+pd <- position_dodge(.4)
+
+cols <- brewer.pal(3, "Dark2")[2 : 3]
+g1 <- ggplot(regall, aes(x = Variable, y = Estimate, colour = Model, alpha = Type, shape = Type)) +
+	geom_errorbar(aes(ymin = LB, ymax = UB, alpha = Type), size = size1, width = 0,
+		      position = pd) +
+geom_point(size = size2, width = 0,
+	   position = pd) +
+theme_bw() +     geom_hline(aes(yintercept = 0), size = size1, colour = "grey50",
+			    linetype = "dashed") +
+geom_vline(aes(xintercept = corsx), size = size1)+
+scale_color_manual(values = cols, name = "Approach", labels = c("PCA", "Exposures")) +
+scale_alpha_manual(values = c(0.5, 1), labels = c("Unadjusted", "Adjusted")) +
+scale_shape_manual(values = c(16, 16), guide = "none") + xlab("") +
+ylab("Change per SD increase") +
+theme(text = element_text(size = 25), axis.text.y = element_text(size = 16)) +
+theme(legend.position = "bottom") +
+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+g1 <- g1 + facet_wrap(~ Group, scales = "free_x", nrow = 1)
+
+
+pdf(file.path(p1, "fig2.pdf"), height = 7, width = 15)
+g1
+graphics.off()
+
+
+
+```
+
+
 
 
 ```{r pres}
