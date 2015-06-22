@@ -1,6 +1,6 @@
 # Do your exposures need supervision?
 
-Jenna R Krall, Howard H. Chang, W. Michael Caudle, Katherine M. Gass, Matthew J. Strickland
+Jenna R Krall, Howard H. Chang, Katherine M. Gass, W. Michael Caudle, Matthew J. Strickland
 
 These files contain all functions and analysis code used to submit to the NIEHS epi-stats workshop in July 2015
 
@@ -8,8 +8,10 @@ These files contain all functions and analysis code used to submit to the NIEHS 
 
 All code was written using R version 3.1
 
+- `niehs-epistats-samplecode.R` contains sample code submitted to NIEHS
 - `niehs-epistats-results.Rmd` contains all the analysis, including results and figures, generated for the poster and oral presentation.
 - `niehs-epistats-fn.R` contains all the functions needed to run the analysis.  
+
 
 ## Our results
 
