@@ -261,13 +261,13 @@ plot_load <- function(pca1b) {
 #' @param simout results from niehs_outer
 #' @param size1 size of lines
 #' @param size2 size of points
-plot_reg_outer <- function(simout, size1, size2) {
+plot_reg_outer <- function(simout, size1, size2, line1 = T, rmun = F) {
     lmout1 <- simout$reg1
     lmoutPCA <-  simout$regPCA
     groupings <- simout$groupings
     labels1 <- simout$labels1
 
-    plot_reg(lmout1, lmoutPCA, groupings, labels1, size1, size2)$g1
+    plot_reg(lmout1, lmoutPCA, groupings, labels1, size1, size2, line1, rmun)$g1
 
 
 }
@@ -278,7 +278,7 @@ plot_reg_outer <- function(simout, size1, size2) {
 #' @param lmout1 results from mix_regress for standard regression
 #' @param lmoutPCA results from mix_regress for PCA
 #' @param groupings match lmout1 results to lmoutPCA results
-plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL, size1 = 1.1, size2 = 1.7) {
+plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL, size1 = 1.1, size2 = 1.7, line1 = T, rmun = F) {
     
     # number of pcs
     nc <- length(unique(groupings[, 2]))
@@ -310,6 +310,11 @@ plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL, size1 = 1.1, s
         regall$Variable <- factor(regall$Variable, levels = labels1[, 1], labels = labels1[, 2])
     }
 
+    if(rmun) {
+
+       regall <- filter(regall, Type == "lm.multivar")
+    }
+
 
     # Plot output
     pd <- position_dodge(.4)
@@ -321,14 +326,28 @@ plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL, size1 = 1.1, s
                    position = pd) +
         theme_bw() +     geom_hline(aes(yintercept = 0), size = size1, colour = "grey50", 
                                     linetype = "dashed") +
-        geom_vline(aes(xintercept = corsx), size = size1)+
+
         scale_color_manual(values = cols, name = "Approach", labels = c("PCA", "Exposures")) +
-        scale_alpha_manual(values = c(0.5, 1), labels = c("Unadjusted", "Adjusted")) +
+
         scale_shape_manual(values = c(16, 16), guide = "none") + xlab("") +
         ylab("Change per SD increase") + 
         theme(text = element_text(size = 10)) + 
         theme(legend.position = "right") + 
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+        if(rmun) {
+           g1 <- g1 + scale_alpha_manual(guide = F, values = c(1), labels = c( "Adjusted")) 
+        }else {
+           g1 <- g1 + scale_alpha_manual(values = c(0.5, 1), labels = c("Unadjusted", "Adjusted")) 
+}
+
+
+ 
+        if(line1) {
+          g1 <- g1 + geom_vline(aes(xintercept = corsx), size = size1)
+        }
+
     
     g1 <- g1 + facet_wrap(~ Group, scales = "free_x", nrow = 1)
     
