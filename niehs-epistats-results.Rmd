@@ -333,7 +333,7 @@ graphics.off()
 
 
 ## Plots for poster
-```{r post, eval = F}
+```{r post, eval = T}
 # Combined loadings and results for simulated data
 
 h1 <- 4
@@ -364,7 +364,7 @@ sim1$pload  + theme(text = element_text(size = size1))
 graphics.off()
 
 pdf(file.path(p1, "fig1b.pdf"), height = 5.5, width = 10)
- plot_reg_outer(sim1, size1b, size2b)  + theme(text = element_text(size = size1, line = line1))
+plot_reg_outer(sim1, size1b, size2b, line1 = F, rmun = T)  + theme(text = element_text(size = size1, line = line1))
 graphics.off()
 
 
@@ -375,7 +375,7 @@ sim2$pload  + theme(text = element_text(size = size1)) + theme(axis.text.x = ele
 graphics.off()
 
 pdf(file.path(p1, "fig5b.pdf"), height = 6, width = 15)
-plot_reg_outer(sim2, size1b, size2b)  + theme(text = element_text(size = size1))
+plot_reg_outer(sim2, size1b, size2b, line1 = F, rmun = T)  + theme(text = element_text(size = size1))
 graphics.off()
 
 
@@ -384,7 +384,7 @@ real$pload  + theme(text = element_text(size = size1)) + theme(axis.text.x = ele
 graphics.off()
 
 pdf(file.path(p1, "fig2.pdf"), height = 6.5, width = 17)
-plot_reg_outer(real, size1b, size2b) + theme(text = element_text(size = size1))
+plot_reg_outer(real, size1b, size2b, line1 = F, rmun = T) + theme(text = element_text(size = size1))
 graphics.off()
 
 
@@ -493,6 +493,8 @@ size2 <- 4.5
 regall <- real[["preg"]][["data"]]
 pd <- position_dodge(.4)
 
+regall <- filter(regall, Type == "lm.multivar")
+
 cols <- brewer.pal(3, "Dark2")[2 : 3]
 g1 <- ggplot(regall, aes(x = Variable, y = Estimate, colour = Model, alpha = Type, shape = Type)) +
 	geom_errorbar(aes(ymin = LB, ymax = UB, alpha = Type), size = size1, width = 0,
@@ -501,9 +503,9 @@ geom_point(size = size2, width = 0,
 	   position = pd) +
 theme_bw() +     geom_hline(aes(yintercept = 0), size = size1, colour = "grey50",
 			    linetype = "dashed") +
-geom_vline(aes(xintercept = corsx), size = size1)+
+#geom_vline(aes(xintercept = corsx), size = size1)+
 scale_color_manual(values = cols, name = "Approach", labels = c("PCA", "Exposures")) +
-scale_alpha_manual(values = c(0.5, 1), labels = c("Unadjusted", "Adjusted")) +
+scale_alpha_manual(guide = F, values = c(1), labels = c( "Adjusted")) +
 scale_shape_manual(values = c(16, 16), guide = "none") + xlab("") +
 ylab("Change per SD increase") +
 theme(text = element_text(size = 25), axis.text.y = element_text(size = 16)) +
@@ -524,7 +526,7 @@ graphics.off()
 
 
 
-```{r pres}
+```{r pres, eval = F}
 
 
 
