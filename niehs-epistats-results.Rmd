@@ -263,7 +263,7 @@ bcol <- brewer.pal(5, "Blues")
 
 
 ## Plots for abstract
-```{r abs, eval = F}
+```{r abs, eval = T}
 # Combined loadings and results for simulated data1
 
 
@@ -526,7 +526,7 @@ graphics.off()
 
 
 
-```{r pres, eval = F}
+```{r pres, eval = T}
 
 
 
@@ -578,7 +578,7 @@ geom_point(size = size2, width = 0,
 	   position = pd) +
 theme_bw() +     geom_hline(aes(yintercept = 0), size = size1, colour = "grey50",
 			    linetype = "dashed") +
-geom_vline(aes(xintercept = corsx), size = size1)+
+#geom_vline(aes(xintercept = corsx), size = size1)+
 scale_color_manual(values = cols, name = "Approach", labels = c("PCA", "Exposures")) +
 scale_alpha_manual(values = c(0.5, 1), labels = c("Unadjusted", "Adjusted")) +
 scale_shape_manual(values = c(16, 16), guide = "none") + xlab("") +

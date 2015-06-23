@@ -278,7 +278,7 @@ plot_reg_outer <- function(simout, size1, size2, line1 = T, rmun = F) {
 #' @param lmout1 results from mix_regress for standard regression
 #' @param lmoutPCA results from mix_regress for PCA
 #' @param groupings match lmout1 results to lmoutPCA results
-plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL, size1 = 1.1, size2 = 1.7, line1 = T, rmun = F) {
+plot_reg <- function(lmout1, lmoutPCA, groupings, labels1 = NULL, size1 = 1.1, size2 = 1.7, line1 = F, rmun = F) {
     
     # number of pcs
     nc <- length(unique(groupings[, 2]))
